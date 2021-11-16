@@ -197,7 +197,7 @@ module MemoWise
     # @return [Integer] the array index in `@_memo_wise_indices` to use to find
     #   the memoization data for the given method
     def index(method_name)
-      target_class.instance_variable_get(:@_memo_wise_indices)[method_name]
+      target_class.class_variable_get(:@@_memo_wise_indices)[method_name]
     end
 
     # Returns visibility of an instance method defined on class `target`.

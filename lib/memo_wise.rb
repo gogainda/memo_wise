@@ -174,12 +174,13 @@ module MemoWise
         #     single_arg_method_name: 0,
         #     other_single_arg_method_name: 1
         #   }
-        memo_wise_indices = klass.instance_variable_get(:@_memo_wise_indices)
-        memo_wise_indices ||= klass.instance_variable_set(:@_memo_wise_indices, {})
-        index = klass.instance_variable_get(:@_memo_wise_index_counter) || 0
+        memo_wise_indices = klass.class_variable_get(:@@_memo_wise_indices) if klass.class_variable_defined?(:@@_memo_wise_indices)
+        memo_wise_indices ||= klass.class_variable_set(:@@_memo_wise_indices, {})
+
+        index = klass.class_variable_defined?(:@@_memo_wise_index_counter) ? klass.class_variable_get(:@@_memo_wise_index_counter) : 0
 
         memo_wise_indices[method_name] = index
-        klass.instance_variable_set(:@_memo_wise_index_counter, index + 1)
+        klass.class_variable_set(:@@_memo_wise_index_counter, index + 1)
 
         case method_arguments
         when MemoWise::InternalAPI::NONE
