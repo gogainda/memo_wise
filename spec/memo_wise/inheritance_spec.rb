@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-RSpec.describe "Inheritance safety" do # rubocop:disable RSpec/DescribeClass
+RSpec.describe "inheritance safety" do # rubocop:disable RSpec/DescribeClass
   let(:parent_class) do
-    class Parent
+    Class.new do
       prepend MemoWise
 
       def parent_method
@@ -13,7 +13,7 @@ RSpec.describe "Inheritance safety" do # rubocop:disable RSpec/DescribeClass
   end
 
   let(:child_class) do
-    class Child < parent_class
+    Class.new(parent_class) do
       def child_method
         "child_method"
       end
