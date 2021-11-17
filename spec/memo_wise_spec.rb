@@ -269,6 +269,44 @@ RSpec.describe MemoWise do
           expect(external_counter[0]).to eq(1)
         end
       end
+
+      context "when the class has a child class" do
+        let(:child_class) do
+          Class.new(class_with_memo) do
+            def child_method_counter
+              @child_method_counter || 0
+            end
+
+            def child_method
+              @child_method_counter = child_method_counter + 1
+              "child_method"
+            end
+          end
+        end
+
+        let(:instance) { child_class.new }
+
+        it "memoizes the parent methods" do
+          expect(Array.new(4) { instance.no_args }).to all eq("no_args")
+          expect(instance.no_args_counter).to eq(1)
+          expect(Array.new(4) { instance.child_method }).to all eq("child_method")
+          expect(instance.child_method_counter).to eq(4)
+        end
+
+        context "when the child class also memoizes methods" do
+          before :each do
+            child_class.prepend MemoWise
+            child_class.memo_wise :child_method
+          end
+
+          it "memoizes the parent and child methods separately" do
+            expect(Array.new(4) { instance.no_args }).to all eq("no_args")
+            expect(instance.no_args_counter).to eq(1)
+            expect(Array.new(4) { instance.child_method }).to all eq("child_method")
+            expect(instance.child_method_counter).to eq(1)
+          end
+        end
+      end
     end
 
     context "with class methods" do
@@ -305,6 +343,42 @@ RSpec.describe MemoWise do
               to raise_error(ArgumentError, "`:self` is the only key allowed in memo_wise")
           end
         end
+
+        context "when the class has a child class" do
+          let(:child_class) do
+            Class.new(class_with_memo) do
+              def self.child_method_counter
+                @child_method_counter || 0
+              end
+
+              def self.child_method
+                @child_method_counter = child_method_counter + 1
+                "child_method"
+              end
+            end
+          end
+
+          it "memoizes the parent methods" do
+            expect(Array.new(4) { child_class.no_args }).to all eq("no_args")
+            expect(child_class.no_args_counter).to eq(1)
+            expect(Array.new(4) { child_class.child_method }).to all eq("child_method")
+            expect(child_class.child_method_counter).to eq(4)
+          end
+
+          context "when the child class also memoizes methods" do
+            before :each do
+              child_class.prepend MemoWise
+              child_class.memo_wise self: :child_method
+            end
+
+            it "memoizes the parent and child methods separately" do
+              expect(Array.new(4) { child_class.no_args }).to all eq("no_args")
+              expect(child_class.no_args_counter).to eq(1)
+              expect(Array.new(4) { child_class.child_method }).to all eq("child_method")
+              expect(child_class.child_method_counter).to eq(1)
+            end
+          end
+        end
       end
 
       # These test cases would fail due to a JRuby bug
@@ -328,6 +402,57 @@ RSpec.describe MemoWise do
             let(:memoized) { class_with_memo }
             let(:non_memoized) { class_with_memo.new }
             let(:non_memoized_name) { :instance }
+          end
+
+          context "when the class has a child class" do
+            let(:child_class) do
+              Class.new(class_with_memo) do
+                class << self
+                  def child_method_counter
+                    @child_method_counter || 0
+                  end
+
+                  def child_method
+                    @child_method_counter = child_method_counter + 1
+                    "child_method"
+                  end
+                end
+              end
+            end
+
+            it "memoizes the parent methods" do
+              expect(Array.new(4) { child_class.no_args }).to all eq("no_args")
+              expect(child_class.no_args_counter).to eq(1)
+              expect(Array.new(4) { child_class.child_method }).to all eq("child_method")
+              expect(child_class.child_method_counter).to eq(4)
+            end
+
+            context "when the child class also memoizes methods" do
+              let(:child_class) do
+                Class.new(class_with_memo) do
+                  class << self
+                    prepend MemoWise
+
+                    def child_method_counter
+                      @child_method_counter || 0
+                    end
+
+                    def child_method
+                      @child_method_counter = child_method_counter + 1
+                      "child_method"
+                    end
+                    memo_wise :child_method
+                  end
+                end
+              end
+
+              it "memoizes the parent and child methods separately" do
+                expect(Array.new(4) { child_class.no_args }).to all eq("no_args")
+                expect(child_class.no_args_counter).to eq(1)
+                expect(Array.new(4) { child_class.child_method }).to all eq("child_method")
+                expect(child_class.child_method_counter).to eq(1)
+              end
+            end
           end
         end
       end
