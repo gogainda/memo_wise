@@ -16,6 +16,7 @@ RSpec.describe "adding methods" do # rubocop:disable RSpec/DescribeClass
     let(:expected_public_class_methods) do
       %i[
         allocate
+        inherited
         instance_method
         memo_wise
         preset_memo_wise

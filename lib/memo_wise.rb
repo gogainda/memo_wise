@@ -110,6 +110,11 @@ module MemoWise
         MemoWise::InternalAPI.create_memo_wise_state!(super)
       end
 
+      def inherited(subclass)
+        super
+        MemoWise::InternalAPI.create_memo_wise_state!(subclass)
+      end
+
       # NOTE: See YARD docs for {.memo_wise} directly below this method!
       def memo_wise(method_name_or_hash)
         klass = self
