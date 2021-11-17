@@ -179,8 +179,8 @@ module MemoWise
         #     single_arg_method_name: 0,
         #     other_single_arg_method_name: 1
         #   }
-        memo_wise_indices = klass.instance_variable_get(:@_memo_wise_indices)
-        memo_wise_indices ||= klass.instance_variable_set(:@_memo_wise_indices, {})
+        memo_wise_indices = klass.class_variable_get(:@@_memo_wise_indices) if klass.class_variable_defined?(:@@_memo_wise_indices)
+        memo_wise_indices ||= klass.class_variable_set(:@@_memo_wise_indices, {})
 
         # We use a class variable for tracking the index to make this work with
         # inheritance structures. When a parent and child class both use
@@ -202,7 +202,8 @@ module MemoWise
                   0
                 end
 
-        memo_wise_indices[method_name] = index
+        memo_wise_indices[klass] ||= {}
+        memo_wise_indices[klass][method_name] = index
         klass.class_variable_set(:@@_memo_wise_index_counter, index + 1) # rubocop:disable Style/ClassVars
 
         case method_arguments
