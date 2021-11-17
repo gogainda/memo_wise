@@ -179,32 +179,19 @@ module MemoWise
         #     single_arg_method_name: 0,
         #     other_single_arg_method_name: 1
         #   }
-        memo_wise_indices = klass.class_variable_get(:@@_memo_wise_indices) if klass.class_variable_defined?(:@@_memo_wise_indices)
-        memo_wise_indices ||= klass.class_variable_set(:@@_memo_wise_indices, {})
+        memo_wise_indices = klass.instance_variable_get(:@_memo_wise_indices)
+        memo_wise_indices ||= klass.instance_variable_set(:@_memo_wise_indices, {})
 
-        # We use a class variable for tracking the index to make this work with
-        # inheritance structures. When a parent and child class both use
-        # MemoWise, we want the child class's index to not "reset" back to 0 and
-        # overwrite the behavior of a memoized parent method. Using a class
-        # variable will share the index data between parent and child classes.
-        #
-        # However, we don't use a class variable for `@_memo_wise_indices`
-        # because we want to allow instance and class methods with the same name
-        # to both be memoized, and using a class variable would share that index
-        # data between them.
-        # NOTE: If we discover other edge cases that our implementation does not
-        # support, we may have to switch to using a class variable
-        # `@@_memo_wise_indices`--or a global variable--that has the object,
-        # such as a class or module or singleton class, as the top-level key.
-        index = if klass.class_variable_defined?(:@@_memo_wise_index_counter)
-                  klass.class_variable_get(:@@_memo_wise_index_counter)
-                else
-                  0
-                end
+        # Find the first index in the ancestor chain and use that.
+        index_class = ancestors.find do |ancestor|
+                        ancestor_class = klass.singleton_class? ? ancestor.singleton_class : ancestor
+                        ancestor_class.instance_variable_get(:@_memo_wise_index_counter)
+                      end || klass
 
-        memo_wise_indices[klass] ||= {}
-        memo_wise_indices[klass][method_name] = index
-        klass.class_variable_set(:@@_memo_wise_index_counter, index + 1) # rubocop:disable Style/ClassVars
+        index = index_class.instance_variable_get(:@_memo_wise_index_counter) || 0
+
+        memo_wise_indices[method_name] = index
+        index_class.instance_variable_set(:@_memo_wise_index_counter, index + 1) # rubocop:disable Style/ClassVars
 
         case method_arguments
         when MemoWise::InternalAPI::NONE
