@@ -22,9 +22,9 @@ RSpec.describe "thread safety" do # rubocop:disable RSpec/DescribeClass
       end
     end
 
-    context "condition: accidental nil values" do
+    context "with condition: accidental nil values" do
       let(:condition_to_check) do
-        lambda { |values| values.any?(&:nil?) }
+        ->(values) { values.any?(&:nil?) }
       end
 
       # Tip of the hat to @jeremyevans for finding and fixing a race condition
@@ -36,9 +36,9 @@ RSpec.describe "thread safety" do # rubocop:disable RSpec/DescribeClass
       end
     end
 
-    context "condition: different value returned to each thread" do
+    context "with condition: different value returned to each thread" do
       let(:condition_to_check) do
-        lambda { |values| values.any? { |v| v != values.first } }
+        ->(values) { values.any? { |v| v != values.first } }
       end
 
       it "returns the same memoized value to each thread" do
